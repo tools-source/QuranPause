@@ -1,0 +1,9 @@
+Azan by Andrewler, September 3, 2022.
+Source: https://commons.wikimedia.org/wiki/File:Azan.ogg
+Original: https://upload.wikimedia.org/wikipedia/commons/8/86/Azan.ogg
+License: Creative Commons Attribution-ShareAlike 4.0 International
+https://creativecommons.org/licenses/by-sa/4.0/
+
+azan.mp3 is Wikimedia's MP3 conversion of the original Ogg recording.
+azan-alert.wav is the first 28 seconds, converted to 16-bit linear PCM WAV.
+Both derivatives remain under CC BY-SA 4.0. No endorsement is implied.

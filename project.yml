@@ -1,0 +1,110 @@
+name: QuranTime
+options:
+  developmentLanguage: en
+  knownRegions: [en, ar]
+  bundleIdPrefix: com.quranpause
+  deploymentTarget:
+    iOS: '17.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    DEVELOPMENT_TEAM: XA5BVJ88VD
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    APP_GROUP: group.com.quranpause.shared
+    MARKETING_VERSION: '1.0'
+    CURRENT_PROJECT_VERSION: '1'
+packages:
+  Adhan:
+    url: https://github.com/batoulapps/adhan-swift
+    exactVersion: 1.4.0
+targets:
+  QuranTime:
+    type: application
+    platform: iOS
+    sources: [QuranTime, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.quranpause.app
+        INFOPLIST_KEY_CFBundleDisplayName: QuranPause
+        PRODUCT_NAME: QuranPause
+        PRODUCT_MODULE_NAME: QuranTime
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: QuranTime/Info.plist
+      properties:
+        UIBackgroundModes: [audio]
+        NSLocationWhenInUseUsageDescription: Your location is used on this device to calculate prayer times and the Qibla direction.
+    entitlements:
+      path: QuranTime/QuranTime.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.quranpause.shared]
+    dependencies:
+      - package: Adhan
+      - target: ActivityMonitor
+      - target: ShieldConfiguration
+  ActivityMonitor:
+    type: app-extension
+    platform: iOS
+    sources: [Extensions/ActivityMonitor, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.quranpause.app.monitor
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Extensions/ActivityMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: QuranPause Monitor
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ActivityMonitor
+    entitlements:
+      path: Extensions/ActivityMonitor/ActivityMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.quranpause.shared]
+  ShieldConfiguration:
+    type: app-extension
+    platform: iOS
+    sources: [Extensions/ShieldConfiguration, Shared/PresentationPreferences.swift]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.quranpause.app.shield
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Extensions/ShieldConfiguration/Info.plist
+      properties:
+        CFBundleDisplayName: QuranPause Shield
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
+    entitlements:
+      path: Extensions/ShieldConfiguration/ShieldConfiguration.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.quranpause.shared]
+  QuranTimeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [QuranTimeTests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/QuranPause.app/QuranPause"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: QuranTime
+schemes:
+  QuranPause:
+    build:
+      targets:
+        QuranTime: all
+    test:
+      targets: [QuranTimeTests]

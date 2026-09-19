@@ -1,0 +1,10 @@
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*-output.log
+
+# Stray duplicates of the generated Xcode project
+QuranTime 2.xcodeproj/
+QuranTime 3.xcodeproj/

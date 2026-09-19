@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QuranPause — Privacy Policy</title>
+<style>
+:root{color-scheme:light dark;--ink:#203c33;--muted:#6d7a70;--paper:#f7f6f0;--card:#fff;--line:#e3e5db;--green:#204d40}
+@media (prefers-color-scheme:dark){:root{--ink:#eaf1e7;--muted:#acbdaf;--paper:#101a15;--card:#1b2a22;--line:#34463a;--green:#abd8bd}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:46rem;margin:0 auto;padding:3rem 1.25rem 5rem}
+h1{font-size:2rem;margin:0 0 .25rem;letter-spacing:-.01em}
+h2{font-size:1.15rem;margin:2.5rem 0 .5rem;color:var(--green)}
+.sub{color:var(--muted);margin:0 0 2rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem 1.25rem;margin:1.5rem 0}
+ul{padding-left:1.15rem}li{margin:.35rem 0}
+a{color:var(--green)}
+footer{margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem;color:var(--muted);font-size:.9rem}
+code{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:.05rem .3rem;font-size:.9em}
+</style>
+</head>
+<body>
+<main>
+<h1>QuranPause Privacy Policy</h1>
+<p class="sub">Arabic name: وقفة قرآن · Last updated 18 September 2026</p>
+
+<div class="card">
+<strong>The short version.</strong> QuranPause has no account, no server of its own, and no analytics, advertising, or tracking of any kind. It does not collect your personal data. What you set up in the app stays on your iPhone.
+</div>
+
+<h2>What the app stores, and where</h2>
+<p>Everything below is kept on your device, in the app's own storage and its App Group container. It is never sent to us, because there is no “us” to send it to — the developer operates no server.</p>
+<ul>
+  <li>Your routine: session length, daily lock times, and the schedule you saved.</li>
+  <li>Your sessions and the time you have earned.</li>
+  <li>Zikr reminders you write, and their delivery times.</li>
+  <li>Favourite surahs and the last Mushaf page you read.</li>
+  <li>Your chosen reciter, language, and appearance.</li>
+  <li>Your prayer location: the coordinates, city name, and time zone you chose, plus your calculation method.</li>
+</ul>
+<p>You can erase all of it by deleting the app.</p>
+
+<h2>Screen Time and the apps you choose to lock</h2>
+<p>App locking uses Apple's Family Controls and Managed Settings frameworks. When you pick apps, categories, or websites to lock, iOS hands the app opaque tokens — not names. The app cannot see which apps you selected, cannot read your usage, and cannot tell anyone else. Those tokens stay on your device.</p>
+<p>While a real session is unfinished, the app asks iOS to prevent app deletion device-wide. That restriction is lifted once every session is complete. You can revoke Screen Time authorisation at any time in iPhone Settings.</p>
+
+<h2>Location</h2>
+<p>Location is optional. It is used for two things: calculating prayer times and the Qibla direction. Those calculations happen on your device, offline, using a saved location — you can also skip location entirely and pick a city by name.</p>
+<p>Two things do leave the device when you use location or search for a city: the coordinates or city name are sent to <strong>Apple's geocoding service</strong>, to turn coordinates into a city name or a city name into coordinates. That request is handled by Apple under <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. The app sends your location nowhere else.</p>
+
+<h2>Recitations</h2>
+<p>The Quran text, the Mushaf pages and fonts, and the azan recording are bundled in the app and work offline. Recitations are streamed on demand, only when you press play:</p>
+<ul>
+  <li>Full surahs from Quran Foundation's audio host, <code>download.quranicaudio.com</code>.</li>
+  <li>Individual ayahs from <code>everyayah.com</code>.</li>
+</ul>
+<p>As with any streaming request, those hosts receive what your device must send to fetch a file — your IP address and which recording you asked for. They are independent services with their own policies. Nothing about you, your routine, or your locked apps is included.</p>
+
+<h2>Notifications</h2>
+<p>Prayer alerts, azan alerts, and zikr reminders are local notifications, scheduled on your device by your device. They are not sent through any push server.</p>
+
+<h2>What is never collected</h2>
+<ul>
+  <li>No account, email address, or phone number.</li>
+  <li>No analytics, crash reporting, advertising identifiers, or third-party SDKs of any kind.</li>
+  <li>No tracking across apps or websites; nothing is sold or shared with data brokers.</li>
+  <li>No reading history, no ayah you copied, no recording of what you listened to.</li>
+</ul>
+<p>The app's Privacy Manifest declares <code>NSPrivacyTracking</code> as false and an empty list of collected data types.</p>
+
+<h2>Children</h2>
+<p>QuranPause is suitable for all ages and collects no data from anyone, including children.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the updated version will be posted at this address with a new date above.</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy: open an issue at <a href="https://github.com/tools-source/QuranPause/issues">github.com/tools-source/QuranPause/issues</a>.</p>
+
+<footer>
+QuranPause is open source: <a href="https://github.com/tools-source/QuranPause">github.com/tools-source/QuranPause</a>.
+Quran text and the Madinah Mushaf pages come from their published sources under their own licences, listed in the app and in the repository's README.
+</footer>
+</main>
+</body>
+</html>

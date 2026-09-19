@@ -1,0 +1,32 @@
+import AppKit
+let size = NSSize(width: 1024, height: 1024)
+let context = CGContext(data: nil, width: 1024, height: 1024, bitsPerComponent: 8, bytesPerRow: 4096, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+NSGraphicsContext.saveGraphicsState()
+NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+NSColor(srgbRed: 0.125, green: 0.302, blue: 0.251, alpha: 1).setFill()
+NSBezierPath(rect: NSRect(origin: .zero, size: size)).fill()
+let gold = NSColor(srgbRed: 0.87, green: 0.80, blue: 0.59, alpha: 1)
+let ivory = NSColor(srgbRed: 0.96, green: 0.94, blue: 0.85, alpha: 1)
+let arch = NSBezierPath()
+arch.move(to: NSPoint(x: 236, y: 257)); arch.line(to: NSPoint(x: 236, y: 568))
+arch.curve(to: NSPoint(x: 512, y: 853), controlPoint1: NSPoint(x: 236, y: 740), controlPoint2: NSPoint(x: 430, y: 796))
+arch.curve(to: NSPoint(x: 788, y: 568), controlPoint1: NSPoint(x: 594, y: 796), controlPoint2: NSPoint(x: 788, y: 740))
+arch.line(to: NSPoint(x: 788, y: 380))
+arch.lineWidth = 12; gold.withAlphaComponent(0.55).setStroke(); arch.stroke()
+for left in [true, false] {
+    let page = NSBezierPath()
+    page.move(to: NSPoint(x: 512, y: 340))
+    page.curve(to: NSPoint(x: left ? 302 : 722, y: 400), controlPoint1: NSPoint(x: left ? 443 : 581, y: 396), controlPoint2: NSPoint(x: left ? 363 : 661, y: 415))
+    page.line(to: NSPoint(x: left ? 302 : 722, y: 649))
+    page.curve(to: NSPoint(x: 512, y: 590), controlPoint1: NSPoint(x: left ? 390 : 634, y: 663), controlPoint2: NSPoint(x: left ? 457 : 567, y: 637))
+    page.close(); ivory.setFill(); page.fill()
+}
+let spine = NSBezierPath(); spine.move(to: NSPoint(x: 512, y: 350)); spine.line(to: NSPoint(x: 512, y: 590)); spine.lineWidth = 12
+NSColor(srgbRed: 0.125, green: 0.302, blue: 0.251, alpha: 1).setStroke(); spine.stroke()
+let clockRect = NSRect(x: 608, y: 209, width: 232, height: 232)
+let circle = NSBezierPath(ovalIn: clockRect)
+NSColor(srgbRed: 0.125, green: 0.302, blue: 0.251, alpha: 1).setFill(); circle.fill(); circle.lineWidth = 18; gold.setStroke(); circle.stroke()
+let hands = NSBezierPath(); hands.move(to: NSPoint(x: 724, y: 391)); hands.line(to: NSPoint(x: 724, y: 325)); hands.line(to: NSPoint(x: 773, y: 299)); hands.lineWidth = 17; hands.lineCapStyle = .round; ivory.setStroke(); hands.stroke()
+NSGraphicsContext.restoreGraphicsState()
+let bitmap = NSBitmapImageRep(cgImage: context.makeImage()!)
+try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
