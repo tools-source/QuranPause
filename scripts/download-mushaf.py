@@ -2,7 +2,8 @@
 
 Sources
   * Glyphs: the King Fahd Glorious Quran Printing Complex (KFGQPC) QCF V2 page
-    fonts. Each font holds the word shapes printed on one Mushaf page.
+    fonts. Each font holds the word shapes printed on one Mushaf page. Quran
+    Foundation's surah-name font supplies the calligraphic chapter headings.
   * Layout: Quran Foundation's word-level V2 page/line data (`v2_page`,
     `line_v2`, `code_v2`), fetched surah by surah so no word can be dropped or
     picked up from a neighbouring page.
@@ -24,6 +25,9 @@ check below passes. Outputs are written only after the whole Mushaf verifies.
   7. Per page, an ayah run list records how many of the page's glyphs belong to
      each ayah, in printed order, so touching a word on the page resolves to its
      ayah without inferring anything from the glyphs.
+  8. Every text line preserves the source's word boundaries. The app renders one
+     isolated span per word, as required by QCF fonts, so neighbouring word
+     glyphs cannot shape or overlap as one browser text run.
 
 Every exception below was checked by eye against the printed KFGQPC page, and
 each is pinned to the exact upstream value so any source change fails the build.
@@ -58,7 +62,8 @@ LAYOUT_URL = (
     "https://api.quran.com/api/v4/verses/by_chapter/{chapter}"
     "?words=true&word_fields=code_v2,v2_page,line_v2&per_page=50&page={page}"
 )
-FONT_URL = "https://verses.quran.com/fonts/quran/hafs/v2/woff2/p{page}.woff2"
+FONT_URL = "https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p{page}.woff2"
+SURAH_FONT_URL = "https://verses.quran.foundation/fonts/quran/surah-names/v1/sura_names.woff2"
 PAGES = range(1, 605)
 BASMALA_SOURCE_PAGE = 1  # Al-Fatihah 1:1 words 1-4, without its ayah marker.
 FIRST_WORD_GLYPH = 0xFC41
@@ -120,6 +125,7 @@ def build(offline: bool) -> None:
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         chapters = list(pool.map(lambda c: chapter_verses(c, offline), range(1, 115)))
         fonts = list(pool.map(lambda p: cached(f"p{p}.woff2", FONT_URL.format(page=p), offline), PAGES))
+    surah_font = cached("sura_names.woff2", SURAH_FONT_URL, offline)
 
     # 1-3. Text structure and reading order.
     words: list[dict] = []
@@ -208,7 +214,11 @@ def build(offline: bool) -> None:
             layout[page][line] = entry
 
     for word in words:
-        layout[word["page"]].setdefault(word["line"], {"type": "text", "content": ""})["content"] += word["code"]
+        line = layout[word["page"]].setdefault(
+            word["line"], {"type": "text", "content": "", "words": []}
+        )
+        line["content"] += word["code"]
+        line["words"].append({"key": word["key"], "content": word["code"]})
 
     basmala_words = [w for w in words if w["key"] == "1:1"][:-1]  # drop the ayah marker
     basmala = "".join(word["code"] for word in basmala_words)
@@ -237,6 +247,19 @@ def build(offline: bool) -> None:
         expected = list(range(1, 9 if page <= 2 else 16))
         if sorted(layout[page]) != expected:
             errors.append(f"Page {page}: lines {sorted(layout[page])}, expected {expected[0]}-{expected[-1]}")
+        for line, entry in layout[page].items():
+            if entry["type"] == "text" and "".join(word["content"] for word in entry["words"]) != entry["content"]:
+                errors.append(f"Page {page} line {line}: word boundaries do not reproduce the printed glyph run")
+        word_runs: list[list] = []
+        for entry in (layout[page][line] for line in sorted(layout[page])):
+            for word in entry.get("words", []):
+                count = len(glyphs(word["content"]))
+                if word_runs and word_runs[-1][0] == word["key"]:
+                    word_runs[-1][1] += count
+                else:
+                    word_runs.append([word["key"], count])
+        if word_runs != runs_by_page[page]:
+            errors.append(f"Page {page}: word keys do not reproduce the independently verified ayah runs")
 
     # 6. Page index from the verified pages. An ayah belongs to the page where it
     # starts; juz membership is per ayah and carries over unchanged.
@@ -283,12 +306,14 @@ def build(offline: bool) -> None:
             "ayahsSHA256": hashlib.sha256(ayah_bytes).hexdigest(),
             "fontSHA256": hashlib.sha256(fonts_by_page[page]).hexdigest(),
         })
+    (OUTPUT / "sura_names.woff2").write_bytes(surah_font)
     manifest = {
         "edition": "Madinah Mushaf, Hafs an Asim, 604 pages, 15 lines",
         "glyphs": "King Fahd Glorious Quran Printing Complex (KFGQPC) QCF V2 page fonts",
         "layout": "Quran Foundation word-level V2 page and line data",
-        "sources": {"layout": LAYOUT_URL, "fonts": FONT_URL,
+        "sources": {"layout": LAYOUT_URL, "fonts": FONT_URL, "surahNames": SURAH_FONT_URL,
                     "terms": "https://api-docs.quran.com/legal/mushaf-fonts-and-images/"},
+        "surahFontSHA256": hashlib.sha256(surah_font).hexdigest(),
         "basmala": f"KFGQPC glyphs of Al-Fatihah 1:1 from page {BASMALA_SOURCE_PAGE}, without the ayah marker",
         "printVerifiedExceptions": {
             "lineCorrections": [f"{key} word {position}: line {old} -> {new}"

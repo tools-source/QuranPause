@@ -62,4 +62,47 @@ final class RecitationTests: XCTestCase {
         XCTAssertEqual(model.state.activeSession?.remaining, start - 5, "A paused session earns nothing")
         model.setReadingQuran(false)
     }
+    @MainActor func testQuranActivityAutomaticallyStartsAWaitingSession() {
+        let model = AppModel()
+        let original = model.state
+        defer {
+            model.pauseSession()
+            model.setReadingQuran(false)
+            model.setListening(false)
+            model.update { $0 = original }
+        }
+        model.update { state in
+            state.scheduleEnabled = false
+            state.sessions = []
+            state.enqueue(id: "automatic-activity-test", practice: true)
+        }
+
+        XCTAssertFalse(model.isRunning)
+        model.setReadingQuran(true)
+        XCTAssertTrue(model.isRunning, "Opening the reader should start a waiting countdown")
+
+        model.pauseSession()
+        model.setReadingQuran(false)
+        model.setListening(true)
+        XCTAssertTrue(model.isRunning, "Audible recitation should start a waiting countdown")
+    }
+    @MainActor func testQuranActivityDoesNotCreateASession() {
+        let model = AppModel()
+        let original = model.state
+        defer {
+            model.pauseSession()
+            model.setReadingQuran(false)
+            model.setListening(false)
+            model.update { $0 = original }
+        }
+        model.update { state in
+            state.scheduleEnabled = false
+            state.sessions = []
+        }
+
+        model.setReadingQuran(true)
+        model.setListening(true)
+        XCTAssertNil(model.state.activeSession)
+        XCTAssertFalse(model.isRunning, "Reading and listening should not create a new lock session")
+    }
 }

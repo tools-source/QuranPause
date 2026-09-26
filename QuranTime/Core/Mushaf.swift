@@ -22,14 +22,28 @@ enum Mushaf {
         }
         let edition: String
         let glyphs: String
+        let surahFontSHA256: String
         let pages: [Page]
     }
 
     struct Layout: Decodable {
+        struct Word: Decodable {
+            let key: String
+            let content: String
+        }
+
         struct Line: Decodable {
             let type: String
             let content: String
             let surah: Int?
+            let words: [Word]?
+
+            init(type: String, content: String, surah: Int?, words: [Word]? = nil) {
+                self.type = type
+                self.content = content
+                self.surah = surah
+                self.words = words
+            }
         }
         let page: Int
         let lines: [Line]
@@ -61,6 +75,12 @@ enum Mushaf {
         .flatMap { try? JSONDecoder().decode(Manifest.self, from: $0) }
         .flatMap { $0.pages.map(\.page) == Array(1...pageCount) ? $0 : nil }
 
+    /// Quran Foundation's calligraphic surah-name font, integrity-checked with
+    /// the rest of the Mushaf snapshot before it is embedded in the page.
+    static let surahFont: Data? = manifest.flatMap {
+        verified("sura_names", "woff2", "Mushaf", sha256: $0.surahFontSHA256)
+    }
+
     /// Returns the page only when every file matches the verified snapshot.
     static func page(_ number: Int) -> Page? {
         guard (1...pageCount).contains(number), let entry = manifest?.pages[number - 1],
@@ -74,7 +94,26 @@ enum Mushaf {
                   let data = verified("p1", "woff2", "Mushaf/Fonts", sha256: first.fontSHA256) else { return nil }
             basmalaFont = data
         }
-        return Page(layout: layout, font: font, basmalaFont: basmalaFont, ayahRuns: ayahRuns(number, entry: entry))
+        let runs = ayahRuns(number, entry: entry)
+        let selectableRuns = runs.flatMap { wordRuns(in: layout, match: $0) ? $0 : nil }
+        return Page(layout: layout, font: font, basmalaFont: basmalaFont, ayahRuns: selectableRuns)
+    }
+
+    /// Word keys embedded in the layout are independently checked against the
+    /// ayah run snapshot before they may drive taps or highlighting.
+    private static func wordRuns(in layout: Layout, match expected: [AyahRuns.Run]) -> Bool {
+        var actual: [(key: String, glyphs: Int)] = []
+        for word in layout.lines.compactMap(\.words).flatMap({ $0 }) {
+            let count = word.content.unicodeScalars.filter { !$0.properties.isWhitespace }.count
+            if actual.last?.key == word.key {
+                actual[actual.count - 1].glyphs += count
+            } else {
+                actual.append((word.key, count))
+            }
+        }
+        return actual.count == expected.count && zip(actual, expected).allSatisfy {
+            $0.key == $1.key && $0.glyphs == $1.glyphs
+        }
     }
 
     /// The runs must cover exactly the page's glyphs, once each, in printed order,
@@ -136,11 +175,17 @@ enum Mushaf {
         return lines
     }
 
-    /// Pages 1-2 have 8 lines and the rest 15; the text lines must hold exactly the
-    /// page's run of word glyphs, in order, so no word is missing, repeated, or foreign.
+    /// Pages 1-2 have 8 lines and the rest 15. Text lines must preserve every
+    /// source word boundary and reproduce the page's glyph run exactly, so the
+    /// web renderer can isolate QCF words instead of shaping neighbours together.
     static func isValid(_ layout: Layout, glyphs: Int) -> Bool {
         guard layout.lines.count == (layout.page <= 2 ? 8 : 15),
               layout.lines.allSatisfy({ lineTypes.contains($0.type) && !$0.content.isEmpty }) else { return false }
+        for line in layout.lines where line.type == "text" {
+            guard let words = line.words, !words.isEmpty,
+                  words.allSatisfy({ !$0.key.isEmpty && !$0.content.isEmpty }),
+                  words.map(\.content).joined() == line.content else { return false }
+        }
         let placed = layout.lines.filter { $0.type == "text" }
             .flatMap { $0.content.unicodeScalars.filter { !$0.properties.isWhitespace }.map(\.value) }
         return placed == Array(firstWordGlyph..<firstWordGlyph + UInt32(glyphs))

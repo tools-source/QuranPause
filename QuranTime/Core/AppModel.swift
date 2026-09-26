@@ -62,6 +62,7 @@ import UserNotifications
         authorization = AuthorizationCenter.shared.authorizationStatus
         if active {
             update { $0.reconcileSchedule() }
+            startWaitingSessionForQuranActivity()
             if isEarningByReading { clock.resume(at: ProcessInfo.processInfo.systemUptime) }
             Task { await refreshNotifications(); await prayers.refreshAlerts() }
         } else { clock.pause() }
@@ -78,6 +79,7 @@ import UserNotifications
         guard listening != isListening else { return }
         if isEarningByReading { tick() }
         isListening = listening
+        if listening { startWaitingSessionForQuranActivity() }
         if isEarningByReading { clock.resume(at: ProcessInfo.processInfo.systemUptime) } else { clock.pause() }
     }
     private func apply(credit: Double) {
@@ -90,6 +92,9 @@ import UserNotifications
             completedSession = finished
             isRunning = false
             clock.pause()
+        } else if prior == nil {
+            // A scheduled lock can arrive while the reader is already open.
+            startWaitingSessionForQuranActivity()
         }
     }
     func beginSession() {
@@ -106,8 +111,16 @@ import UserNotifications
     func setReadingQuran(_ reading: Bool) {
         if !reading && isEarningByReading { tick() }
         isReadingQuran = reading
+        if reading { startWaitingSessionForQuranActivity() }
         if isEarningByReading { clock.resume(at: ProcessInfo.processInfo.systemUptime) }
         else { clock.pause() }
+    }
+    /// A scheduled commitment is already protecting the selected apps, so Quran
+    /// activity should begin earning time without a separate tap on the timer.
+    private func startWaitingSessionForQuranActivity() {
+        guard state.activeSession != nil, !isRunning, isReadingQuran || isListening else { return }
+        isRunning = true
+        if isEarningByReading { clock.resume(at: ProcessInfo.processInfo.systemUptime) }
     }
     func authorize() async {
         guard !Self.isSimulator else { errorMessage = I18n.text("Screen Time app selection is available on a physical iPhone. You can try a practice focus session here."); return }

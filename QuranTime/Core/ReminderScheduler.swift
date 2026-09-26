@@ -2,7 +2,8 @@ import UserNotifications
 
 /// Pure request construction makes every recurrence and identifier testable.
 enum ReminderScheduler {
-    static func identifiers(for id: String) -> [String] { ["zikr.\(id)", "zikr.\(id).0", "zikr.\(id).1"] }
+    static let notificationPrefix = "zikr."
+    static func identifiers(for id: String) -> [String] { ["\(notificationPrefix)\(id)", "\(notificationPrefix)\(id).0", "\(notificationPrefix)\(id).1"] }
     static func requests(for reminder: ZikrReminder) -> [UNNotificationRequest] {
         guard reminder.enabled else { return [] }
         let components: [DateComponents]
@@ -16,7 +17,7 @@ enum ReminderScheduler {
         return components.enumerated().map { index, date in
             let content = UNMutableNotificationContent()
             content.title = reminder.displayTitle; content.body = reminder.displayText; content.sound = .default
-            return UNNotificationRequest(identifier: "zikr.\(reminder.id).\(index)", content: content,
+            return UNNotificationRequest(identifier: "\(notificationPrefix)\(reminder.id).\(index)", content: content,
                                          trigger: UNCalendarNotificationTrigger(dateMatching: date, repeats: true))
         }
     }

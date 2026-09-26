@@ -273,18 +273,32 @@ private final class MushafPageController: UIViewController, WKNavigationDelegate
         UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) { webView.alpha = 1 }
     }
 
-    /// Wraps each printed line in per-ayah spans so a tapped word resolves to its ayah.
-    /// The glyphs and their order are exactly the verified layout's.
+    /// Wraps every verified QCF word in its own span. QCF word glyphs must be
+    /// separate shaping runs; combining an ayah into one text node can make two
+    /// neighbouring Arabic word pictures collide. The ayah key keeps taps and
+    /// selection attached to the exact source word.
     static func body(for mushafPage: Mushaf.Page) -> String {
         let segments = Mushaf.segments(mushafPage)
         return mushafPage.layout.lines.enumerated().map { index, line in
             let style = line.type == "surah-header" ? "surah" : line.type
             let content: String
-            if line.type == "text", let parts = segments?[index] {
+            if line.type == "text", let words = line.words {
+                let selectable = mushafPage.ayahRuns != nil
+                content = words.map { word in
+                    let key = selectable ? escaped(word.key) : ""
+                    return "<span class=\"w\" data-k=\"\(key)\">\(escaped(word.content))</span>"
+                }.joined()
+            } else if line.type == "text", let parts = segments?[index] {
                 content = parts.map { part in
                     guard let key = part.key else { return escaped(part.content) }
                     return "<span class=\"w\" data-k=\"\(escaped(key))\">\(escaped(part.content))</span>"
                 }.joined()
+            } else if line.type == "surah-header", let surah = line.surah {
+                let number = String(format: "%03d", surah)
+                content = """
+                <span class="surah-calligraphy" aria-hidden="true"><span>surah</span><span>\(number)</span></span>
+                <span class="sr-only">\(escaped(line.content))</span>
+                """
             } else {
                 content = escaped(line.content)
             }
@@ -309,22 +323,31 @@ private final class MushafPageController: UIViewController, WKNavigationDelegate
         let basmalaFace = mushafPage.basmalaFont.map {
             "@font-face{font-family:qcf-basmala;src:url(data:font/woff2;base64,\($0.base64EncodedString())) format('woff2');font-display:block}"
         } ?? ""
+        let surahFace = Mushaf.surahFont.map {
+            "@font-face{font-family:surahnames;src:url(data:font/woff2;base64,\($0.base64EncodedString())) format('woff2');font-display:block}"
+        } ?? ""
         return """
         <!doctype html><html dir="rtl"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
         @font-face{font-family:qcf-\(page);src:url(data:font/woff2;base64,\(mushafPage.font.base64EncodedString())) format('woff2');font-display:block}
         \(basmalaFace)
+        \(surahFace)
         *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
         body{padding:2.4% 3%;color:#17231d;font-family:qcf-\(page);display:flex;align-items:stretch;
              -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
         #page{width:100%;height:100%;display:grid;grid-template-rows:repeat(\(lineCount),1fr);align-items:center;border:1px solid rgba(90,110,82,.18);border-radius:12px;padding:2.2% 2.8%;background:#fffdf5;box-shadow:0 2px 14px rgba(30,45,35,.07)}
         #page.special{padding-top:19%;padding-bottom:19%}
         .line{min-height:0;text-align:center;white-space:nowrap;font-size:min(5.15vw,4.15vh);line-height:1;direction:rtl;font-variant-ligatures:normal}
-        .surah{font-family:-apple-system,"Geeza Pro",sans-serif;font-size:min(4.3vw,3.4vh);font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(93,122,96,.12)}
+        .surah{font-family:surahnames,"Geeza Pro",sans-serif;font-size:min(4.65vw,3.65vh);display:flex;align-items:center;justify-content:center;position:relative;
+               margin-inline:1%;border:1px solid rgba(92,112,82,.5);border-radius:3px;outline:1px solid rgba(92,112,82,.24);outline-offset:-4px;background:rgba(255,253,245,.92)}
+        .surah:before,.surah:after{content:"◆";position:absolute;top:50%;transform:translateY(-50%);font-family:serif;font-size:.38em;color:rgba(92,112,82,.68);background:#fffdf5;padding:.2em}
+        .surah:before{right:1.6%}.surah:after{left:1.6%}
+        .surah-calligraphy{display:inline-flex;align-items:center;gap:.08em;direction:rtl;line-height:1}
         .basmala{font-family:qcf-basmala}
         /* Marking an ayah only tints it; the glyphs keep their printed places. */
-        .w{border-radius:.18em;transition:background-color .18s ease}
+        .w{display:inline-block;border-radius:.18em;transition:background-color .18s ease}
         .w.sel{background:rgba(32,77,64,.16)}
-        @media(prefers-color-scheme:dark){body{color:#f1ead8}#page{background:#17221d;border-color:rgba(220,210,180,.14);box-shadow:none}.w.sel{background:rgba(171,216,189,.24)}}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+        @media(prefers-color-scheme:dark){body{color:#f1ead8}#page{background:#17221d;border-color:rgba(220,210,180,.14);box-shadow:none}.surah{background:#17221d;border-color:rgba(220,210,180,.42);outline-color:rgba(220,210,180,.2)}.surah:before,.surah:after{background:#17221d;color:rgba(220,210,180,.68)}.w.sel{background:rgba(171,216,189,.24)}}
         </style></head><body><main id="page" class="\(pageClass)" aria-label="Quran page \(page)">\(lines)</main>
         <script>
         function fitMushafLines(){

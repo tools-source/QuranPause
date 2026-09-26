@@ -64,6 +64,12 @@ final class PrayerTests: XCTestCase {
         let full = try AVAudioPlayer(contentsOf: XCTUnwrap(Bundle.main.url(forResource: "azan", withExtension: "mp3")))
         XCTAssertGreaterThan(full.duration, 180)
     }
+    func testNotificationTapsRouteOnlyDefaultActions() {
+        XCTAssertEqual(PrayerModel.destination(for: "\(PrayerSchedule.notificationPrefix)Fajr", actionIdentifier: UNNotificationDefaultActionIdentifier), .prayer)
+        XCTAssertEqual(PrayerModel.destination(for: "\(ReminderScheduler.notificationPrefix)morning.0", actionIdentifier: UNNotificationDefaultActionIdentifier), .zikr)
+        XCTAssertNil(PrayerModel.destination(for: "unrelated", actionIdentifier: UNNotificationDefaultActionIdentifier))
+        XCTAssertNil(PrayerModel.destination(for: "\(PrayerSchedule.notificationPrefix)Fajr", actionIdentifier: UNNotificationDismissActionIdentifier))
+    }
     func testDeletionProtectionPersistsUntilAllRealSessionsFinish() throws {
         var state = AppState(); state.durationMinutes = 1
         XCTAssertFalse(state.requiresLockdown)

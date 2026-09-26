@@ -39,9 +39,15 @@ struct AppShell: View {
             NavigationStack { ZikrView() }.safeAreaInset(edge: .bottom) { RecitationBar() }.tabItem { Label("Zikr", systemImage: "sparkles") }.tag(3)
             NavigationStack { PrayerView() }.safeAreaInset(edge: .bottom) { RecitationBar() }.tabItem { Label("Prayer", systemImage: "moon.stars") }.tag(4)
         }
-        .onChange(of: model.prayers.openPrayer) { _, value in if value { tab = 4; model.prayers.openPrayer = false } }
-        .onAppear { if model.prayers.openPrayer { tab = 4; model.prayers.openPrayer = false }; model.recitation.surahTitle = { [library] id in library.surahs.first { $0.id == id }?.displayName ?? I18n.format("Surah %lld", id) } }
-        .onChange(of: phase, initial: true) { _, value in model.setForeground(value == .active) }
+        .onChange(of: model.prayers.notificationDestination) { _, _ in openNotificationDestinationIfReady() }
+        .onAppear {
+            openNotificationDestinationIfReady()
+            model.recitation.surahTitle = { [library] id in library.surahs.first { $0.id == id }?.displayName ?? I18n.format("Surah %lld", id) }
+        }
+        .onChange(of: phase, initial: true) { _, value in
+            model.setForeground(value == .active)
+            if value == .active { openNotificationDestinationIfReady() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             Task { await model.prayers.refreshAlerts() }
         }
@@ -53,6 +59,19 @@ struct AppShell: View {
             WelcomeView().appPresentation()
         }
         .sheet(item: $model.completedSession) { session in CompletionView(session: session).appPresentation() }
+    }
+    private func openNotificationDestinationIfReady() {
+        guard phase == .active, let destination = model.prayers.takeNotificationDestination() else { return }
+        switch destination {
+        case .prayer:
+            tab = 4
+            Task { @MainActor in
+                await Task.yield()
+                if !model.prayers.playingAzan { model.prayers.toggleAzan() }
+            }
+        case .zikr:
+            tab = 3
+        }
     }
 }
 struct CompletionView: View {

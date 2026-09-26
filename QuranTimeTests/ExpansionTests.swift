@@ -120,12 +120,18 @@ final class ExpansionTests: XCTestCase {
     func testEveryMushafPageMatchesItsVerifiedSnapshot() throws {
         let manifest = try XCTUnwrap(Mushaf.manifest)
         XCTAssertTrue(manifest.glyphs.contains("King Fahd Glorious Quran Printing Complex"))
+        XCTAssertNotNil(Mushaf.surahFont)
         var surahHeaders: [Int] = []
         var basmalas: [Int] = []
         for number in 1...604 {
             // Checksums, line count, and the exact in-order glyph run of the page font.
             let page = try XCTUnwrap(Mushaf.page(number), "Page \(number) failed verification")
             XCTAssertEqual(page.layout.page, number)
+            for (lineNumber, line) in page.layout.lines.enumerated() where line.type == "text" {
+                let words = try XCTUnwrap(line.words, "Page \(number) line \(lineNumber + 1) lost its word boundaries")
+                XCTAssertFalse(words.isEmpty)
+                XCTAssertEqual(words.map(\.content).joined(), line.content)
+            }
             surahHeaders += page.layout.lines.filter { $0.type == "surah-header" }.compactMap(\.surah)
             basmalas += page.layout.lines.filter { $0.type == "basmala" }.compactMap(\.surah)
         }
@@ -148,6 +154,9 @@ final class ExpansionTests: XCTestCase {
         // Page 534 begins at Ar-Rahman 70; Al-Waqi'ah's heading and basmala are lines 7-8.
         XCTAssertEqual(Mushaf.manifest?.pages[533].firstAyah, "55:70")
         XCTAssertEqual(try lines(534).map(\.type)[6...7], ["surah-header", "basmala"])
+        XCTAssertEqual(try XCTUnwrap(lines(534)[6].surah), 56)
+        XCTAssertEqual(try XCTUnwrap(lines(4)[0].words).count, 9)
+        XCTAssertTrue(try XCTUnwrap(lines(4)[0].words).allSatisfy { $0.key == "2:17" })
         // An-Nisa's heading ends page 76 and its basmala opens page 77.
         XCTAssertEqual(try lines(76).last?.type, "surah-header")
         XCTAssertEqual(try lines(76).last?.surah, 4)

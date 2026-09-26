@@ -781,6 +781,7 @@
 		67FC9D51965A2BECADB1B254 /* p429.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 869C835B78F6FF8B514F238B /* p429.woff2 */; };
 		680635828E2696003E1CC501 /* p433.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = FC6921DE0E94518D14D1C9B7 /* p433.woff2 */; };
 		68E13DD26BADB0135BD0FC49 /* p554.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = FDF4074877FBAEEEEFAE137A /* p554.woff2 */; };
+		68E397F607D6FB9D6850C6E2 /* sura_names.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6C870C1F920C51FF69D297F2 /* sura_names.woff2 */; };
 		6902EA7C941BE28273738E4A /* ayahs-20.json in Resources */ = {isa = PBXBuildFile; fileRef = EDC6D69629BE452D2D20D2F7 /* ayahs-20.json */; };
 		690B0C546BAC6B7E227F14DE /* ayahs-83.json in Resources */ = {isa = PBXBuildFile; fileRef = EB6062B283FC36F1ECCF32D5 /* ayahs-83.json */; };
 		690CB7F5AA0E2C4AB8F9FC51 /* ayahs-123.json in Resources */ = {isa = PBXBuildFile; fileRef = 7742FFD2F9530FC9E284A794 /* ayahs-123.json */; };
@@ -2693,6 +2694,7 @@
 		6C52EE2F24B301F64EB811A7 /* 189.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 189.json; sourceTree = "<group>"; };
 		6C56518949DF2115BA8F42CE /* 39.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 39.json; sourceTree = "<group>"; };
 		6C5C3E095717F6F990B685BA /* 90.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 90.json; sourceTree = "<group>"; };
+		6C870C1F920C51FF69D297F2 /* sura_names.woff2 */ = {isa = PBXFileReference; path = sura_names.woff2; sourceTree = "<group>"; };
 		6CC44E7425D6F00FFCA1E607 /* ayahs-529.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "ayahs-529.json"; sourceTree = "<group>"; };
 		6CF274C9C35FD050734DD47C /* p95.woff2 */ = {isa = PBXFileReference; path = p95.woff2; sourceTree = "<group>"; };
 		6CFBC487C1F1C74ADDCC2096 /* p400.woff2 */ = {isa = PBXFileReference; path = p400.woff2; sourceTree = "<group>"; };
@@ -3796,6 +3798,7 @@
 			isa = PBXGroup;
 			children = (
 				0A2EE6EE7766F27CF7CBDD5C /* manifest.json */,
+				6C870C1F920C51FF69D297F2 /* sura_names.woff2 */,
 				7AA8CE297013A2782A458BD1 /* Ayahs */,
 				DD33F65E58E59D2567E2F3ED /* Fonts */,
 				EC2A64FA50CEAF65A5E9A8FB /* Pages */,
@@ -7746,6 +7749,7 @@
 				ED63291946D6DDE128E52B0D /* page_index.json in Resources */,
 				CFC2F9C3055848483B3F38A2 /* quran_en.json in Resources */,
 				ADCC847550FAE44D2261BE9D /* recitations.json in Resources */,
+				68E397F607D6FB9D6850C6E2 /* sura_names.woff2 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -3,6 +3,11 @@ import CoreLocation
 import SwiftUI
 import UserNotifications
 
+enum QuranNotificationDestination: Equatable, Sendable {
+    case prayer
+    case zikr
+}
+
 @MainActor @Observable final class PrayerModel: NSObject, @preconcurrency CLLocationManagerDelegate, UNUserNotificationCenterDelegate, AVAudioPlayerDelegate {
     private(set) var place: PrayerPlace?
     private(set) var method = PrayerMethod.northAmerica
@@ -18,7 +23,7 @@ import UserNotifications
     private(set) var scheduledThrough: Date?
     private(set) var notificationDenied = false
     var error: String?
-    var openPrayer = false
+    private(set) var notificationDestination: QuranNotificationDestination?
     @ObservationIgnored var beforeAzan: () -> Void = {}
     @ObservationIgnored private let locationManager = CLLocationManager()
     @ObservationIgnored private let geocoder = CLGeocoder()
@@ -204,14 +209,32 @@ import UserNotifications
         audio?.stop(); audio = nil; playingAzan = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
+    func takeNotificationDestination() -> QuranNotificationDestination? {
+        defer { notificationDestination = nil }
+        return notificationDestination
+    }
+    nonisolated static func destination(for identifier: String, actionIdentifier: String) -> QuranNotificationDestination? {
+        guard actionIdentifier == UNNotificationDefaultActionIdentifier else { return nil }
+        if identifier.hasPrefix(PrayerSchedule.notificationPrefix) { return .prayer }
+        if identifier.hasPrefix(ReminderScheduler.notificationPrefix) { return .zikr }
+        return nil
+    }
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in stopAzan() }
     }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .list]
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Keep UIKit's notification completion on the main actor. The async delegate
+        // bridge can resume on a cooperative queue during scene restoration.
+        Task { @MainActor in completionHandler([.banner, .sound, .list]) }
     }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard response.notification.request.identifier.hasPrefix(PrayerSchedule.notificationPrefix), response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
-        await MainActor.run { openPrayer = true; if !playingAzan { toggleAzan() } }
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        let destination = Self.destination(for: response.notification.request.identifier,
+                                           actionIdentifier: response.actionIdentifier)
+        Task { @MainActor [weak self] in
+            self?.notificationDestination = destination
+            completionHandler()
+        }
     }
 }
